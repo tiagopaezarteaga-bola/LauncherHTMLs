@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         androidx.appcompat.widget.LinearLayoutCompat layout = new androidx.appcompat.widget.LinearLayoutCompat(this);
         layout.setOrientation(androidx.appcompat.widget.LinearLayoutCompat.VERTICAL);
-        layout.setGravity(View.CENTER_HORIZONTAL);
+        layout.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
         layout.addView(tv);
         layout.addView(btn);
         setContentView(layout);
