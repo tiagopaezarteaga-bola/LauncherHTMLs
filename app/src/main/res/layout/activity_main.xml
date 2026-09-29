@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#1b1b1b">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🚀 LauncherHTMLs"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#e8a43a"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Ruta actual -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Carpeta actual:"
+        android:textSize="12sp"
+        android:textColor="#888888" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <EditText
+            android:id="@+id/et_path"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:text="/sdcard/Download"
+            android:textSize="13sp"
+            android:textColor="#e8e8e8"
+            android:background="#252525"
+            android:padding="8dp"
+            android:singleLine="true"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/btn_go"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:text="IR"
+            android:textSize="12sp"
+            android:backgroundTint="#333333"
+            android:textColor="#e8e8e8" />
+    </LinearLayout>
+
+    <!-- Botones de acción -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btn_scan"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="🔍 Buscar HTMLs"
+            android:textSize="11sp"
+            android:backgroundTint="#2a2a2a"
+            android:textColor="#e8e8e8"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_up"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="⬆ Subir"
+            android:textSize="11sp"
+            android:backgroundTint="#2a2a2a"
+            android:textColor="#e8e8e8"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_refresh"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="🔄 Refrescar"
+            android:textSize="11sp"
+            android:backgroundTint="#2a2a2a"
+            android:textColor="#e8e8e8" />
+    </LinearLayout>
+
+    <!-- Estado -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Navega hasta un archivo .html y selecciónalo"
+        android:textSize="13sp"
+        android:textColor="#888888"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Lista de archivos -->
+    <ListView
+        android:id="@+id/lv_files"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#252525"
+        android:divider="#333333"
+        android:dividerHeight="1dp"
+        android:padding="4dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Estado del servidor -->
+    <TextView
+        android:id="@+id/tv_server_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="11sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Botón lanzar -->
+    <Button
+        android:id="@+id/btn_launch"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="🚀 LANZAR APP WEB"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:enabled="false"
+        android:backgroundTint="#e8a43a"
+        android:textColor="#000000" />
+
+</LinearLayout>
