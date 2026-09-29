@@ -1,11 +1,6 @@
-plugins {
-    id 'com.android.application'
-    id 'com.chaquo.python'
-}
-// En build.gradle raíz, cambiar:
-classpath 'com.android.tools.build:gradle:8.1.4'
+apply plugin: 'com.android.application'
+apply plugin: 'com.chaquo.python'
 
-// 8.1.4 soporta compileSdk 34 sin warnings
 android {
     namespace 'com.example.launcherhtmls'
     compileSdk 34
