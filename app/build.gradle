@@ -8,9 +8,8 @@ android {
     defaultConfig {
         applicationId "com.example.launcherhtmls"
         minSdk 24
-        targetSdk, 33
         targetSdk 33
-        versionCode 1
+       7 versionCode 1
         versionName "1.0"
         
         ndk {
