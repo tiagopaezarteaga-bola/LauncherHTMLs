@@ -1,40 +1,36 @@
-apply plugin: 'com.android.application'
-apply plugin: 'com.chaquo.python'
+plugins {
+    id 'com.android.application'
+    id 'com.chaquo.python'
+}
 
 android {
     namespace 'com.example.launcherhtmls'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.example.launcherhtmls"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
-        
         ndk {
-            abiFilters "arm64-v8a", "x86_64", "armeabi-v7a", "x86"
-        }
-        
-        python {
-            version "3.11"
-            buildPython "/usr/bin/python3"
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
         }
     }
+}
 
-    buildTypes {
-        debug {
-            minifyEnabled false
-        }
+chaquopy {
+    defaultConfig {
+        version "3.8"
     }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+    sourceSets {
+        main {
+            python.srcDir "src/main/python"
+        }
     }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.browser:browser:1.5.0'
+    implementation 'androidx.browser:browser:1.7.0'
 }
