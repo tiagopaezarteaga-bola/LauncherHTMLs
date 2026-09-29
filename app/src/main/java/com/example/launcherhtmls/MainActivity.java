@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Verificar si existe el index.html
         File indexFile = new File(APP_DIR, "index.html");
-       F");
         if (indexFile.exists()) {
             tv.setText(tv.getText() + "\n\n✅ index.html encontrado.\nPresiona el botón para lanzar.");
             btn.setVisibility(View.VISIBLE);
