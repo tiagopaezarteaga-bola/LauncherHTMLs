@@ -1,60 +1,77 @@
+import http.server
+import socketserver
 import os
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import sys
 
-class MiManejador(BaseHTTPRequestHandler):
-    def do_GET(self):
-        # Directorio donde está la app web (pasado desde Java)
-        serve_dir = self.server.serve_dir
-        
-        # Resolver el archivo solicitado
-        if self.path == '/':
-            filepath = os.path.join(serve_dir, 'index.html')
-        else:
-            filepath = os.path.join(serve_dir, self.path.lstrip('/'))
-            
-        if os.path.exists(filepath) and os.path.isfile(filepath):
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+
+    def end_headers(self):
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
+        super().end_headers()
+
+    def do_POST(self):
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            filename = self.path.lstrip('/')
+            filename = os.path.basename(filename)
+            if not filename:
+                filename = 'upload.bin'
+            with open(filename, 'wb') as f:
+                f.write(body)
             self.send_response(200)
-            
-            # Adivinar tipo de contenido
-            if filepath.endswith('.html'): self.send_header('Content-type', 'text/html; charset=utf-8')
-            elif filepath.endswith('.js'): self.send_header('Content-type', 'application/javascript')
-            elif filepath.endswith('.wasm'): self.send_header('Content-type', 'application/wasm')
-            elif filepath.endswith('.css'): self.send_header('Content-type', 'text/css')
-            else: self.send_header('Content-type', 'application/octet-stream')
-            
-           4 # CABECERAS MÁGICAS PARA WASM8 WASM MULTIHILO
-            self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
-            self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
+            self.send_header('Content-Type', 'text/plain')
             self.end_headers()
-            
-            # Enviar archivo
-            with open(filepath, 'rb') as f:
-                self.wfile.write(f.read())
-        else:
-            self.send_error(404, "Archivo no encontrado")
+            self.wfile.write(b'OK')
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(str(e).encode())
 
-def start_server(serve_dir=""):
-    import socket
-    puerto = 8000
-    
-    # Evitar error de puerto ocupado
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        if s.connect_ex(('localhost', puerto)) == 0:
-            print("Servidor ya corriendo.")
-            return
+    def log_message(self, format, *args):
+        pass
 
-    servidor = ThreadingHTTPServer(('localhost', puerto), MiManejador)
-    servidor.serve_dir = serve_dir # Guardar ruta en el objeto servidor
-    print(f"Servidor corriendo en http://localhost:{puerto} sirviendo {serve_dir}")
-    servidor.serve_forever()
-def iniciar_servidor(serve_dir, port=8000):
-    global SERVE_DIR
-    SERVE_DIR = serve_dir
-    
-    import socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        if s.connect_ex(('localhost', port)) == 0:
-            return # Ya corriendo
-            
-    servidor = ThreadingHTTPServer(('localhost', port), MiManejador)
-    servidor.serve_forever()
+
+class ReusableServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+
+_httpd = None
+
+
+def main(port, directory):
+    global _httpd
+    port = int(port)
+    directory = str(directory)
+    if not os.path.isdir(directory):
+        print('ERROR_DIR_NOT_FOUND:' + directory)
+        sys.stdout.flush()
+        return
+    try:
+        os.chdir(directory)
+    except Exception as e:
+        print('ERROR_CHDIR:' + str(e))
+        sys.stdout.flush()
+        return
+    try:
+        _httpd = ReusableServer(('', port), Handler)
+        print('SERVER_READY')
+        sys.stdout.flush()
+        _httpd.serve_forever()
+    except Exception as e:
+        print('ERROR_SERVER:' + str(e))
+        sys.stdout.flush()
+
+
+def stop():
+    global _httpd
+    if _httpd is not None:
+        try:
+            _httpd.shutdown()
+        except Exception:
+            pass
+        _httpd = None
+    print('SERVER_STOPPED')
+    sys.stdout.flush()
