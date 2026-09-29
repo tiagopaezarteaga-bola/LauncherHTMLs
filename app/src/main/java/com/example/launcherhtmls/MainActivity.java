@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
         tv.setId(View.generateViewId());
         tv.setTextSize(18);
         tv.setPadding(40, 100, 40, 20);
-        tv.setText("Buscando archivos en:\\n" + APP_DIR);
+        tv.setText("Buscando archivos en:\n" + APP_DIR);
 
         Button btn = new Button(this);
         btn.setText("🚀 Lanzar App Web");
@@ -48,13 +48,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Verificar si existe el index.html
         File indexFile = new File(APP_DIR, "index.html");
+       F");
         if (indexFile.exists()) {
-            tv.setText(tv.getText() + "\\n\\n✅ index.html encontrado.\\nPresiona el botón para lanzar.");
+            tv.setText(tv.getText() + "\n\n✅ index.html encontrado.\nPresiona el botón para lanzar.");
             btn.setVisibility(View.VISIBLE);
             iniciarServidor();
         } else {
-            tv.setText(tv.getText() + "\\n\\n❌ No se encontró index.html.\\nPor favor, crea la carpeta y pon tus archivos ahí.");
-F.");
+            tv.setText(tv.getText() + "\n\n❌ No se encontró index.html.\nPor favor, crea la carpeta y pon tus archivos ahí.");
         }
     }
 
@@ -84,7 +84,7 @@ F.");
     }
 
     private void abrirJuego() {
-        String url+url = "http://localhost:8000";
+        String url = "http://localhost:8000";
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
         builder.setShowTitle(true);
         CustomTabsIntent customTabsIntent = builder.build();
