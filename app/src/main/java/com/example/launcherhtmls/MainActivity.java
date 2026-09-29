@@ -33,7 +33,6 @@ import java.io.File;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -64,14 +63,16 @@ public class MainActivity extends AppCompatActivity {
 
     private List<FileEntry> currentEntries = new ArrayList<>();
 
-    /* ── Clase para entradas del listado ── */
     static class FileEntry {
         String displayName;
         String fullPath;
         boolean isDirectory;
         File file;
         FileEntry(String dn, String fp, boolean dir, File f) {
-            displayName = dn; fullPath = fp; isDirectory = dir; file = f;
+            displayName = dn;
+            fullPath = fp;
+            isDirectory = dir;
+            file = f;
         }
     }
 
@@ -80,14 +81,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /* Iniciar Chaquopy */
         if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(this));
         }
         py = Python.getInstance();
         serverModule = py.getModule("server");
 
-        /* Vincular vistas */
         etPath = findViewById(R.id.et_path);
         lvFiles = findViewById(R.id.lv_files);
         btnLaunch = findViewById(R.id.btn_launch);
@@ -98,69 +97,78 @@ public class MainActivity extends AppCompatActivity {
         tvStatus = findViewById(R.id.tv_status);
         tvServerStatus = findViewById(R.id.tv_server_status);
 
-        /* Permisos */
+        currentDir = findDefaultDir();
+        etPath.setText(currentDir.getAbsolutePath());
+
         if (!checkPermissions()) {
             requestPermissions();
         }
 
-        /* Directorio inicial */
-        currentDir = findDefaultDir();
-        etPath.setText(currentDir.getAbsolutePath());
-
-        /* Botones */
-        btnGo.setOnClickListener(v -> {
-            File dir = new File(etPath.getText().toString().trim());
-            if (dir.isDirectory()) {
-                currentDir = dir;
-                browseDirectory(currentDir);
-            } else {
-                toast("Carpeta no valida");
-            }
-        });
-
-        btnUp.setOnClickListener(v -> {
-            File parent = currentDir.getParentFile();
-            if (parent != null && parent.canRead()) {
-                currentDir = parent;
-                etPath.setText(currentDir.getAbsolutePath());
-                browseDirectory(currentDir);
-            }
-        });
-
-        btnRefresh.setOnClickListener(v -> browseDirectory(currentDir));
-
-        btnScan.setOnClickListener(v -> scanRecursive());
-
-        btnLaunch.setOnClickListener(v -> launchWebApp());
-
-        /* Click en lista */
-        lvFiles.setOnItemClickListener((parent, view, position, id) -> {
-            FileEntry entry = currentEntries.get(position);
-            if (entry.isDirectory) {
-                currentDir = entry.file;
-                etPath.setText(currentDir.getAbsolutePath());
-                browseDirectory(currentDir);
-            } else {
-                /* Seleccionar HTML */
-                selectedHtmlName = entry.file.getName();
-                selectedHtmlDir = entry.file.getParentFile();
-                tvStatus.setText("✅ Seleccionado: " + entry.file.getAbsolutePath());
-                btnLaunch.setEnabled(true);
-                /* Resaltar en la lista */
-                for (int i = 0; i < lvFiles.getChildCount(); i++) {
-                    lvFiles.getChildAt(i).setBackgroundColor(0x00000000);
+        btnGo.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                File dir = new File(etPath.getText().toString().trim());
+                if (dir.isDirectory()) {
+                    currentDir = dir;
+                    browseDirectory(currentDir);
+                } else {
+                    toast("Carpeta no valida");
                 }
-                view.setBackgroundColor(0x44E8A43A);
             }
         });
 
-        /* Navegar al directorio inicial */
+        btnUp.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                File parent = currentDir.getParentFile();
+                if (parent != null && parent.canRead()) {
+                    currentDir = parent;
+                    etPath.setText(currentDir.getAbsolutePath());
+                    browseDirectory(currentDir);
+                }
+            }
+        });
+
+        btnRefresh.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                browseDirectory(currentDir);
+            }
+        });
+
+        btnScan.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                scanRecursive();
+            }
+        });
+
+        btnLaunch.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                launchWebApp();
+            }
+        });
+
+        lvFiles.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                FileEntry entry = currentEntries.get(position);
+                if (entry.isDirectory) {
+                    currentDir = entry.file;
+                    etPath.setText(currentDir.getAbsolutePath());
+                    browseDirectory(currentDir);
+                } else {
+                    selectedHtmlName = entry.file.getName();
+                    selectedHtmlDir = entry.file.getParentFile();
+                    tvStatus.setText("✅ Seleccionado: " + entry.file.getAbsolutePath());
+                    btnLaunch.setEnabled(true);
+                    for (int i = 0; i < lvFiles.getChildCount(); i++) {
+                        lvFiles.getChildAt(i).setBackgroundColor(0x00000000);
+                    }
+                    view.setBackgroundColor(0x44E8A43A);
+                }
+            }
+        });
+
         browseDirectory(currentDir);
     }
 
-    /* ══════════════════════════════════════
-       NAVEGACIÓN DE ARCHIVOS
-       ══════════════════════════════════════ */
+    /* ── Navegacion de archivos ── */
 
     private void browseDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory()) {
@@ -178,20 +186,21 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        /* Ordenar: carpetas primero, luego archivos, alfabético */
-        Arrays.sort(files, (a, b) -> {
-            if (a.isDirectory() && !b.isDirectory()) return -1;
-            if (!a.isDirectory() && b.isDirectory()) return 1;
-            return a.getName().compareToIgnoreCase(b.getName());
+        Arrays.sort(files, new Comparator<File>() {
+            public int compare(File a, File b) {
+                if (a.isDirectory() && !b.isDirectory()) return -1;
+                if (!a.isDirectory() && b.isDirectory()) return 1;
+                return a.getName().compareToIgnoreCase(b.getName());
+            }
         });
 
-        /* Entrada "subir" */
         if (dir.getParentFile() != null) {
             currentEntries.add(new FileEntry(
                 "⬆ ..", dir.getParentFile().getAbsolutePath(), true, dir.getParentFile()));
         }
 
-        /* Carpetas */
+        boolean autoFound = false;
+
         for (File f : files) {
             if (f.isDirectory() && !f.getName().startsWith(".")) {
                 currentEntries.add(new FileEntry(
@@ -199,13 +208,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        /* Archivos HTML */
-        boolean autoFound = false;
         for (File f : files) {
             if (!f.isDirectory() && isHtmlFile(f.getName())) {
                 currentEntries.add(new FileEntry(
                     "🌐 " + f.getName(), f.getAbsolutePath(), false, f));
-                /* Auto-seleccionar index.html */
                 if (f.getName().equalsIgnoreCase("index.html") && !autoFound) {
                     selectedHtmlName = f.getName();
                     selectedHtmlDir = f.getParentFile();
@@ -216,30 +222,27 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        /* Si no hay HTMLs, mostrar todos los archivos para que se vea el contenido */
-        if (currentEntries.stream().noneMatch(e -> !e.isDirectory)) {
+        boolean hasHtml = false;
+        for (FileEntry e : currentEntries) {
+            if (!e.isDirectory) { hasHtml = true; break; }
+        }
+
+        if (!hasHtml) {
             for (File f : files) {
                 if (!f.isDirectory() && !f.getName().startsWith(".")) {
-                    String icon = getFileIcon(f.getName());
                     currentEntries.add(new FileEntry(
-                        icon + " " + f.getName(), f.getAbsolutePath(), false, f));
+                        "📄 " + f.getName(), f.getAbsolutePath(), false, f));
                 }
             }
         }
 
-        /* Adaptador */
-        List<String> displayNames = new ArrayList<>();
+        List<String> displayNames = new ArrayList<String>();
         for (FileEntry e : currentEntries) {
-            if (!e.isDirectory && !isHtmlFile(e.file.getName())) {
-                displayNames.add(e.displayName + "  (no HTML)");
-            } else {
-                displayNames.add(e.displayName);
-            }
+            displayNames.add(e.displayName);
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
             android.R.layout.simple_list_item_1, displayNames) {
-            @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView tv = (TextView) view.findViewById(android.R.id.text1);
@@ -252,62 +255,70 @@ public class MainActivity extends AppCompatActivity {
         lvFiles.setAdapter(adapter);
 
         if (!autoFound) {
-            tvStatus.setText(currentEntries.stream()
-                .filter(e -> !e.isDirectory).count() + " archivo(s) HTML en " + dir.getName());
+            int htmlCount = 0;
+            for (FileEntry e : currentEntries) {
+                if (!e.isDirectory && isHtmlFile(e.file.getName())) htmlCount++;
+            }
+            tvStatus.setText(htmlCount + " archivo(s) HTML en " + dir.getName());
         }
     }
 
     /* ── Escaneo recursivo ── */
+
     private void scanRecursive() {
         tvStatus.setText("🔍 Buscando archivos HTML...");
         btnScan.setEnabled(false);
 
-        new Thread(() -> {
-            List<FileEntry> results = new ArrayList<>();
-            scanDir(currentDir, results, 0);
+        new Thread(new Runnable() {
+            public void run() {
+                final List<FileEntry> results = new ArrayList<FileEntry>();
+                scanDir(currentDir, results, 0);
 
-            runOnUiThread(() -> {
-                currentEntries.clear();
-                /* Ordenar por path */
-                results.sort(Comparator.comparing(e -> e.fullPath.toLowerCase()));
-                currentEntries.addAll(results);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        currentEntries.clear();
+                        results.sort(new Comparator<FileEntry>() {
+                            public int compare(FileEntry a, FileEntry b) {
+                                return a.fullPath.toLowerCase().compareTo(b.fullPath.toLowerCase());
+                            }
+                        });
+                        currentEntries.addAll(results);
 
-                List<String> displayNames = new ArrayList<>();
-                for (FileEntry e : currentEntries) {
-                    /* Mostrar path relativo */
-                    String rel = e.fullPath;
-                    String base = currentDir.getAbsolutePath();
-                    if (rel.startsWith(base)) {
-                        rel = rel.substring(base.length() + 1);
+                        List<String> displayNames = new ArrayList<String>();
+                        String basePath = currentDir.getAbsolutePath();
+                        for (FileEntry e : currentEntries) {
+                            String rel = e.fullPath;
+                            if (rel.startsWith(basePath)) {
+                                rel = rel.substring(basePath.length() + 1);
+                            }
+                            displayNames.add("🌐 " + rel);
+                        }
+
+                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                            MainActivity.this, android.R.layout.simple_list_item_1, displayNames) {
+                            public View getView(int position, View convertView, ViewGroup parent) {
+                                View view = super.getView(position, convertView, parent);
+                                TextView tv = (TextView) view.findViewById(android.R.id.text1);
+                                tv.setTextColor(0xFFE8E8E8);
+                                tv.setTextSize(13);
+                                tv.setPadding(8, 10, 8, 10);
+                                return view;
+                            }
+                        };
+                        lvFiles.setAdapter(adapter);
+                        tvStatus.setText("✅ " + results.size() + " archivo(s) HTML encontrados");
+                        btnScan.setEnabled(true);
+
+                        if (results.size() == 1) {
+                            FileEntry e = results.get(0);
+                            selectedHtmlName = e.file.getName();
+                            selectedHtmlDir = e.file.getParentFile();
+                            btnLaunch.setEnabled(true);
+                            tvStatus.setText("✅ Auto-seleccionado: " + e.file.getName());
+                        }
                     }
-                    displayNames.add("🌐 " + rel);
-                }
-
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                    MainActivity.this, android.R.layout.simple_list_item_1, displayNames) {
-                    @Override
-                    public View getView(int position, View convertView, ViewGroup parent) {
-                        View view = super.getView(position, convertView, parent);
-                        TextView tv = (TextView) view.findViewById(android.R.id.text1);
-                        tv.setTextColor(0xFFE8E8E8);
-                        tv.setTextSize(13);
-                        tv.setPadding(8, 10, 8, 10);
-                        return view;
-                    }
-                };
-                lvFiles.setAdapter(adapter);
-                tvStatus.setText("✅ " + results.size() + " archivo(s) HTML encontrados");
-                btnScan.setEnabled(true);
-
-                /* Auto-seleccionar si solo hay uno */
-                if (results.size() == 1) {
-                    FileEntry e = results.get(0);
-                    selectedHtmlName = e.file.getName();
-                    selectedHtmlDir = e.file.getParentFile();
-                    btnLaunch.setEnabled(true);
-                    tvStatus.setText("✅ Auto-seleccionado: " + e.file.getName());
-                }
-            });
+                });
+            }
         }).start();
     }
 
@@ -324,9 +335,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /* ══════════════════════════════════════
-       SERVIDOR Y LANZAMIENTO
-       ══════════════════════════════════════ */
+    /* ── Servidor y lanzamiento ── */
 
     private void launchWebApp() {
         if (selectedHtmlName == null || selectedHtmlDir == null) {
@@ -334,51 +343,58 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        /* Detener servidor previo */
         stopServer();
 
         tvServerStatus.setText("⏳ Iniciando servidor en " + selectedHtmlDir.getAbsolutePath());
         btnLaunch.setEnabled(false);
 
-        /* Iniciar servidor Python en hilo separado */
-        serverThread = new Thread(() -> {
-            try {
-                serverModule.callAttr("main", PORT, selectedHtmlDir.getAbsolutePath());
-            } catch (Exception e) {
-                Log.e(TAG, "Server error", e);
-                runOnUiThread(() -> {
-                    tvServerStatus.setText("❌ Error servidor: " + e.getMessage());
-                    btnLaunch.setEnabled(true);
-                });
+        serverThread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    serverModule.callAttr("main", PORT, selectedHtmlDir.getAbsolutePath());
+                } catch (final Exception e) {
+                    Log.e(TAG, "Server error", e);
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            tvServerStatus.setText("❌ Error servidor: " + e.getMessage());
+                            btnLaunch.setEnabled(true);
+                        }
+                    });
+                }
             }
         });
         serverThread.setDaemon(true);
         serverThread.start();
 
-        /* Esperar a que el servidor esté listo */
-        new Thread(() -> {
-            boolean ready = false;
-            for (int i = 0; i < 40; i++) {
-                try {
-                    Thread.sleep(300);
-                    Socket s = new Socket("localhost", PORT);
-                    s.close();
-                    ready = true;
-                    break;
-                } catch (Exception ignored) {}
-            }
-            if (ready) {
-                serverRunning = true;
-                runOnUiThread(() -> {
-                    tvServerStatus.setText("🟢 Servidor listo en puerto " + PORT);
-                    btnLaunch.setEnabled(true);
-                    openChromeTab();
-                });
-            } else {
-                runOnUiThread(() -> {
-                    tvServerStatus.setText("❌ Servidor no respondió tras 12s");
-                    btnLaunch.setEnabled(true);
-                });
+        new Thread(new Runnable() {
+            public void run() {
+                boolean ready = false;
+                for (int i = 0; i < 40; i++) {
+                    try {
+                        Thread.sleep(300);
+                        Socket s = new Socket("localhost", PORT);
+                        s.close();
+                        ready = true;
+                        break;
+                    } catch (Exception ignored) {}
+                }
+                if (ready) {
+                    serverRunning = true;
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            tvServerStatus.setText("🟢 Servidor listo en puerto " + PORT);
+                            btnLaunch.setEnabled(true);
+                            openChromeTab();
+                        }
+                    });
+                } else {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            tvServerStatus.setText("❌ Servidor no respondio tras 12s");
+                            btnLaunch.setEnabled(true);
+                        }
+                    });
+                }
             }
         }).start();
     }
@@ -390,7 +406,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             serverRunning = false;
             serverThread = null;
-            /* Dar tiempo al puerto para liberarse */
             try { Thread.sleep(500); } catch (Exception ignored) {}
         }
     }
@@ -403,22 +418,19 @@ public class MainActivity extends AppCompatActivity {
             CustomTabsIntent intent = builder.build();
             intent.launchUrl(this, Uri.parse(url));
         } catch (Exception e) {
-            /* Fallback: abrir en navegador normal */
             Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(i);
         }
     }
 
-    /* ══════════════════════════════════════
-       PERMISOS
-       ══════════════════════════════════════ */
+    /* ── Permisos ── */
 
     private boolean checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Environment.isExternalStorageManager();
         } else {
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED;
+            return ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
@@ -464,9 +476,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /* ══════════════════════════════════════
-       UTILIDADES
-       ══════════════════════════════════════ */
+    /* ── Utilidades ── */
 
     private File findDefaultDir() {
         File d = new File("/sdcard/Download");
@@ -481,17 +491,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean isHtmlFile(String name) {
         String n = name.toLowerCase();
         return n.endsWith(".html") || n.endsWith(".htm");
-    }
-
-    private String getFileIcon(String name) {
-        String n = name.toLowerCase();
-        if (n.endsWith(".js")) return "📜";
-        if (n.endsWith(".wasm")) return "⚙";
-        if (n.endsWith(".css")) return "🎨";
-        if (n.endsWith(".json")) return "📋";
-        if (n.endsWith(".py")) return "🐍";
-        if (n.endsWith(".txt") || n.endsWith(".md")) return "📝";
-        return "📄";
     }
 
     private void toast(String msg) {
