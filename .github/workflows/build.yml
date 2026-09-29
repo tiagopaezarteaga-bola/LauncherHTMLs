@@ -1,25 +1,39 @@
 name: Build APK
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.1"
-      - uses: gradle/actions/setup-gradle@v3
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
         with:
-          gradle-version: '8.4'
-      - run: gradle assembleDebug
-      - uses: actions/upload-artifact@v4
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: LauncherHTMLs-debug
           path: app/build/outputs/apk/debug/*.apk
-          compression-level: 0
