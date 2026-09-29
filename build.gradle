@@ -10,14 +10,6 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url "https://chaquo.com/maven" }
-    }
-}
-
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
