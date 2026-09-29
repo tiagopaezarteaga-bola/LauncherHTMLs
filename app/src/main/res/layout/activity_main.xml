@@ -6,7 +6,6 @@
     android:padding="16dp"
     android:background="#1b1b1b">
 
-    <!-- Título -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,7 +15,6 @@
         android:textColor="#e8a43a"
         android:layout_marginBottom="12dp" />
 
-    <!-- Ruta actual -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -53,7 +51,6 @@
             android:textColor="#e8e8e8" />
     </LinearLayout>
 
-    <!-- Botones de acción -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -93,7 +90,6 @@
             android:textColor="#e8e8e8" />
     </LinearLayout>
 
-    <!-- Estado -->
     <TextView
         android:id="@+id/tv_status"
         android:layout_width="match_parent"
@@ -103,7 +99,6 @@
         android:textColor="#888888"
         android:layout_marginBottom="6dp" />
 
-    <!-- Lista de archivos -->
     <ListView
         android:id="@+id/lv_files"
         android:layout_width="match_parent"
@@ -115,7 +110,6 @@
         android:padding="4dp"
         android:layout_marginBottom="8dp" />
 
-    <!-- Estado del servidor -->
     <TextView
         android:id="@+id/tv_server_status"
         android:layout_width="match_parent"
@@ -125,7 +119,6 @@
         android:textColor="#666666"
         android:layout_marginBottom="8dp" />
 
-    <!-- Botón lanzar -->
     <Button
         android:id="@+id/btn_launch"
         android:layout_width="match_parent"
