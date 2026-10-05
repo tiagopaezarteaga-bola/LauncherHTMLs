@@ -44,9 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Python py;
     private PyObject serverModule;
-    private Thread serverThread;
-    private boolean serverRunning = false;
-    private boolean wasLaunched = false;
+    private volatile Thread serverThread = null;
+    private volatile boolean serverRunning = false;
+    private volatile boolean wasLaunched = false;
 
     private File currentDir;
     private String selectedHtmlName = null;
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                stopServerAndUpdateUI();
+                stopServerAsync();
                 browseDirectory(currentDir);
             }
         });
@@ -170,14 +170,16 @@ public class MainActivity extends AppCompatActivity {
         browseDirectory(currentDir);
     }
 
-    /* ── Detectar vuelta de Chrome Custom Tab (ATRÁS) ── */
+    /* ── ATRÁS desde Chrome Custom Tab ── */
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (wasLaunched && serverRunning) {
+        if (wasLaunched) {
             wasLaunched = false;
-            stopServerAndUpdateUI();
+            if (serverRunning) {
+                stopServerAsync();
+            }
         }
     }
 
@@ -348,7 +350,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /* ── Servidor y lanzamiento ── */
+    /* ══════════════════════════════════════
+       SERVIDOR — Ciclo de vida sin bloquear UI
+       ══════════════════════════════════════ */
+
+    private void stopServerAsync() {
+        serverRunning = false;
+        wasLaunched = false;
+        serverThread = null;
+        tvServerStatus.setText("⚪ Servidor detenido");
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    serverModule.callAttr("stop");
+                } catch (Exception ignored) {}
+            }
+        }).start();
+    }
 
     private void launchWebApp() {
         if (selectedHtmlName == null || selectedHtmlDir == null) {
@@ -356,14 +375,26 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        /* Siempre desmontar servidor anterior antes de lanzar */
-        stopServerAndUpdateUI();
-
-        tvServerStatus.setText("⏳ Iniciando servidor en " + selectedHtmlDir.getAbsolutePath());
+        serverRunning = false;
+        wasLaunched = false;
         btnLaunch.setEnabled(false);
+        tvServerStatus.setText("⏳ Deteniendo servidor anterior...");
 
         serverThread = new Thread(new Runnable() {
             public void run() {
+                /* 1. Detener servidor anterior (en background, no bloquea UI) */
+                try {
+                    serverModule.callAttr("stop");
+                } catch (Exception ignored) {}
+                try { Thread.sleep(300); } catch (Exception ignored) {}
+
+                /* 2. Iniciar nuevo servidor */
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        tvServerStatus.setText("⏳ Iniciando servidor en " + selectedHtmlDir.getAbsolutePath());
+                    }
+                });
+
                 try {
                     serverModule.callAttr("main", PORT, selectedHtmlDir.getAbsolutePath());
                 } catch (final Exception e) {
@@ -374,18 +405,20 @@ public class MainActivity extends AppCompatActivity {
                             btnLaunch.setEnabled(true);
                         }
                     });
+                    return;
                 }
             }
         });
         serverThread.setDaemon(true);
         serverThread.start();
 
+        /* 3. Esperar a que el servidor esté listo */
         new Thread(new Runnable() {
             public void run() {
                 boolean ready = false;
-                for (int i = 0; i < 40; i++) {
+                for (int i = 0; i < 50; i++) {
                     try {
-                        Thread.sleep(300);
+                        Thread.sleep(200);
                         Socket s = new Socket("localhost", PORT);
                         s.close();
                         ready = true;
@@ -404,28 +437,13 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     runOnUiThread(new Runnable() {
                         public void run() {
-                            tvServerStatus.setText("❌ Servidor no respondio tras 12s");
+                            tvServerStatus.setText("❌ Servidor no respondio");
                             btnLaunch.setEnabled(true);
                         }
                     });
                 }
             }
         }).start();
-    }
-
-    /* ── Detener servidor y actualizar UI ── */
-
-    private void stopServerAndUpdateUI() {
-        if (serverRunning || serverThread != null) {
-            try {
-                serverModule.callAttr("stop");
-            } catch (Exception ignored) {}
-            serverRunning = false;
-            wasLaunched = false;
-            serverThread = null;
-            try { Thread.sleep(500); } catch (Exception ignored) {}
-            tvServerStatus.setText("⚪ Servidor detenido");
-        }
     }
 
     /* ── Abrir Chrome Custom Tab ── */
@@ -520,7 +538,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        stopServerAndUpdateUI();
+        serverRunning = false;
+        wasLaunched = false;
+        try {
+            serverModule.callAttr("stop");
+        } catch (Exception ignored) {}
         super.onDestroy();
     }
 }
