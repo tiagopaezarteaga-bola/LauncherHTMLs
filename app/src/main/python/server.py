@@ -72,6 +72,10 @@ def stop():
             _httpd.shutdown()
         except Exception:
             pass
+        try:
+            _httpd.server_close()
+        except Exception:
+            pass
         _httpd = None
     print('SERVER_STOPPED')
     sys.stdout.flush()
