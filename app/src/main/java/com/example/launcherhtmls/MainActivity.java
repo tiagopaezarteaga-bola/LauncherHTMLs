@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private PyObject serverModule;
     private Thread serverThread;
     private boolean serverRunning = false;
+    private boolean wasLaunched = false;
 
     private File currentDir;
     private String selectedHtmlName = null;
@@ -129,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                stopServerAndUpdateUI();
                 browseDirectory(currentDir);
             }
         });
@@ -166,6 +168,17 @@ public class MainActivity extends AppCompatActivity {
         });
 
         browseDirectory(currentDir);
+    }
+
+    /* ── Detectar vuelta de Chrome Custom Tab (ATRÁS) ── */
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (wasLaunched && serverRunning) {
+            wasLaunched = false;
+            stopServerAndUpdateUI();
+        }
     }
 
     /* ── Navegacion de archivos ── */
@@ -343,7 +356,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        stopServer();
+        /* Siempre desmontar servidor anterior antes de lanzar */
+        stopServerAndUpdateUI();
 
         tvServerStatus.setText("⏳ Iniciando servidor en " + selectedHtmlDir.getAbsolutePath());
         btnLaunch.setEnabled(false);
@@ -399,19 +413,26 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void stopServer() {
+    /* ── Detener servidor y actualizar UI ── */
+
+    private void stopServerAndUpdateUI() {
         if (serverRunning || serverThread != null) {
             try {
                 serverModule.callAttr("stop");
             } catch (Exception ignored) {}
             serverRunning = false;
+            wasLaunched = false;
             serverThread = null;
             try { Thread.sleep(500); } catch (Exception ignored) {}
+            tvServerStatus.setText("⚪ Servidor detenido");
         }
     }
 
+    /* ── Abrir Chrome Custom Tab ── */
+
     private void openChromeTab() {
         String url = "http://localhost:" + PORT + "/" + selectedHtmlName;
+        wasLaunched = true;
         try {
             CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
             builder.setShowTitle(true);
@@ -499,7 +520,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        stopServer();
+        stopServerAndUpdateUI();
         super.onDestroy();
     }
 }
